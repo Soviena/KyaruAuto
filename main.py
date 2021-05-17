@@ -6,6 +6,10 @@ import numpy as np
 from PIL import Image
 import os
 import pytesseract
+
+# Equipment list
+useable = ['boss-ticket','skip-ticket']
+
 # Module
 def textDetection(image):
     orig = image.copy()
@@ -125,7 +129,6 @@ def ocr(image,method,debug=False):
         return gray
     else :
         return text
-
 # function
 def tap(x,y):
     cmd = 'input tap {} {}'.format(x,y)
@@ -147,14 +150,16 @@ def debug_show(image,name='vision'):
 # automation
 def stage_menu(enter=True):
     if enter:
-        tap(1120, 600)
-        time.sleep(1)
+        img = screencap()
+        tmplt = cv2.imread(r'Asset/ui/start.png',0)
+        if imageRecognition(img, tmplt, 0.8, 'bool') :
+            tap(1120, 600)
         return assemble_party()
 
 def assemble_party():
         while ocr(screencap()[35:75,508:758], 'thresh')[0:14] != 'Assemble Party':
             time.sleep(1)
-        tmplt = cv2.imread(r'Asset/no-chara.png',0)
+        tmplt = cv2.imread(r'Asset/ui/no-chara.png',0)
         if imageRecognition(screencap(), tmplt, 0.997, 'bool',False,True) > 0:
             tap(1140, 120)
             time.sleep(1)
@@ -165,14 +170,39 @@ def assemble_party():
         return battle()
 
 def win_stage(image):
-    tplt_win = cv2.imread(r'Asset/win.png',0)
-    tplt_fail = cv2.imread(r'Asset/failed.png',0)
+    tplt_win = cv2.imread(r'Asset/ui/win.png',0)
+    tplt_fail = cv2.imread(r'Asset/ui/failed.png',0)
     win = imageRecognition(image, tplt_win, 0.1, 'bool')
     failed = imageRecognition(image, tplt_fail, 0.7, 'bool')
     if failed:
         return False
     else:
         return True
+
+def battle():
+    i = 0
+    while True:
+        time.sleep(1)
+        img = screencap() 
+        clock = ocr(img[20:47,1055:1125], 'thresh')[0:5]
+        if clock[0:1] == '1' or clock[0:1] == 'i' or clock[0:1] == '0' or clock[0:1] == 'O' or clock[0:1] == 'o' :
+            print(clock)
+            i = 0
+        else :
+            i += 1
+            print('[{}]time not found, retrying...'.format(i))
+            if i > 4:
+                while not imageRecognition(img, cv2.imread(r'Asset/ui/next.png',0), 0.7, 'bool'):
+                    time.sleep(2)
+                    img = screencap()
+                    if imageRecognition(img, cv2.imread(r'Asset/ui/skip.png',0), 0.8, 'bool'):
+                        print('love-up')
+                        tap(1195, 50)
+                    print('waiting...')
+                print('done')
+                tap(1110, 670)
+                break
+    return win_stage(screencap())
 
 def dungeon():
     time.sleep(1)
@@ -181,22 +211,25 @@ def dungeon():
     if floor[0:2] == '10':
         cur_floor = 10
         max_floor = 10
+    elif floor[0:1] == 'S' or floor[0:1] == 's' :
+        cur_floor = 5
+        max_floor = 10
     else:
         cur_floor = floor[0:1]
         max_floor = floor[2:4]
         cur_floor = int(cur_floor)
         max_floor = int(max_floor)
     while cur_floor <= max_floor:
+        img = screencap()
         print(cur_floor,max_floor,sep="/")
         path = "Asset/dungeon/deep_wood/floor{}.png".format(cur_floor)
         tmplt = cv2.imread(r"{}".format(path),0)
         y,x = imageRecognition(img, tmplt, 0.8, 'loc')
-        tap(x,y-10)
+        tap(x,y-5)
         time.sleep(1)
         result = stage_menu()
         print(result)
         if result:
-            tap(1110, 670)
             time.sleep(5)
             tap(640, 636)
             cur_floor += 1
@@ -204,30 +237,33 @@ def dungeon():
                 break
             else:
                 print('going next floor')
-            time.sleep(3)
+                time.sleep(8)
         else :
             print('cancelling...')
             break
-    
-
-def battle():
-    i = 0
-    while True:
-        time.sleep(1)
-        img = screencap()
-        clock = ocr(img[20:47,1055:1125], 'thresh')[0:5]
-        if clock[0:1] == '1' or clock[0:1] == 'i' or clock[0:1] == '0' or clock[0:1] == 'o' :
-            print(clock)
-            i = 0
-        else :
-            i += 1
-            print('[{}]time not found, retrying...'.format(i))
-            if i > 9:
-                print('done')
-                break
-    return win_stage(screencap())
             
-           
+def findItems():
+    print('evaluating drop...')
+    time.sleep(5)
+    img = screencap()
+    if imageRecognition(img, cv2.imread(r'Asset/ui/limited-shop.png',0), 0.8, 'bool'):
+        print('Limited shop is open')
+        return
+    for i in useable:
+        print('searching..')
+        time.sleep(0.5)
+        if imageRecognition(img, cv2.imread(r'Asset/equipment/useable/{}.png'.format(i),0), 0.8, 'bool') :
+            print(i,'Found!')
+        img = screencap()
+    print('Done evaluating')
+    tap(1110,655)
+        
+def quest():
+    print(stage_menu())
+    findItems()
+
+        
+
 
 client = AdbClient(host="127.0.0.1", port=5037) #connect adb
 devices = client.devices() 
@@ -238,10 +274,7 @@ if len(devices) == 0: # check if any devices is connected
 
 device = devices[0] # sellect first devices
 
-
 dungeon()
-
-
 
 """ Main Menu
 If active, y = 700
@@ -259,25 +292,3 @@ clan x = 920
 mission x = 1115 
 present x = 1212
 buy stamina y = 40 x = 430 """
-
-# tplt = cv2.imread(r"Asset/equipment/moonlight-sword-blu.png",0)
-
-# while True:
-#     # img = cv2.imread(r"screencap/reward-get-obsc.jpg")
-#     result = device.screencap()
-#     img = cv2.imdecode(np.frombuffer(result, np.uint8),cv2.IMREAD_COLOR)
-#     res = imageRecognition(img, tplt,0.1,'img',True)
-
-#     # txt = ocr(img, 'thresh')
-#     # print(txt)
-
-#     cv2.imshow("vision",res)
-#     if cv2.waitKey(25) & 0xFF == ord('q'):
-#         cv2.destroyAllWindows()
-#         running = False
-#         break
-
-
-
-
-
