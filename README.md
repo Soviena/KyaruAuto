@@ -18,7 +18,7 @@ KyaruAuto requires Python 3+, and teserract
 
 Install the required python library.
 ```sh
-pip install pure-python-adbnpm i
+pip install pure-python-adb
 pip install imutils
 pip install opencv-python
 pip install numpy
