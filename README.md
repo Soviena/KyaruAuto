@@ -1,10 +1,40 @@
 # KyaruAuto
-Princess connect global automation
+## _Princess Connect Re:Dive automation bot_
 
 Still in development
+## Features
+- Auto Dungeon clear
 
-Requirement : python 3, google tesseract
+## Roadmap
+- Equipment farming
+- Auto daily mission
+- Set Up party
 
-using python library : ppadb, imutils, opencv, numpy, PIL, os, and pytesseract
+## Installation
+KyaruAuto requires Python 3+, and teserract
 
-tested with bluestack N-64 with enabled debug bridge. 1280x720 screen resolution is recomended 
+Install the required python library.
+```sh
+pip install pure-python-adbnpm i
+pip install imutils
+pip install opencv-python
+pip install numpy
+pip install pytesseract
+```
+
+
+## Required pkg
+
+| Name | Link |
+| ------ | ------ |
+| Python | https://www.python.org/downloads/ |
+| Tesseract-OCR | https://github.com/UB-Mannheim/tesseract/wiki |
+| EAST (already included) | https://github.com/oyyd/frozen_east_text_detection.pb/blob/master/frozen_east_text_detection.pb |
+
+
+## Add Python and Tesseract-OCR to PATH
+- In Search, search for and then select: System (Control Panel)
+- Click the Advanced system settings.
+- Click Environment Variables. In the section System Variables find the PATH environment variable and select it. Click Edit. 
+- If the PATH environment variable does not exist, click New.
+- In the Edit System Variable (or New System Variable) window, specify the value of the PATH environment variable. Click OK. 
