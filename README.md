@@ -3,7 +3,10 @@
 
 Still in development
 ## Features
-- Auto Dungeon clear
+- Auto Dungeon clear (only hard dungeon supported for now)
+- go to dungeon, and run main.py. it should complete floor 1 - 10
+- there should be 1 party set up in my party list
+- if there is 1 stage failed, the bot will stop
 
 ## Roadmap
 - Equipment farming
