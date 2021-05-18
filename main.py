@@ -107,31 +107,51 @@ def imageRecognition(image,template,threshold,out,debug = False,multi=False,norm
         if out == 'img':
             return image
         elif out == 'loc':
-            midh = endX - startX
-            midv = endY - startY
-            x = startX + (midh/2)
-            y = startY + (midv/2)
+            x,y = findCenter(startX, endX, startY, endY)
             return y,x
         elif out == 'bool':
             return max_val > threshold
 
-def ocr(image,method,debug=False):
+def ocr(image,method,l=None,debug=False):
     gray = cv2.cvtColor(image, cv2.COLOR_BGR2GRAY)
     if method == "thresh":
         gray = cv2.threshold(gray, 0, 255,cv2.THRESH_BINARY | cv2.THRESH_OTSU)[1]
     elif method == "blur":
         gray = cv2.medianBlur(gray, 3)
+    elif method == 'adaptive':
+        gray = cv2.adaptiveThreshold(gray,255,cv2.ADAPTIVE_THRESH_GAUSSIAN_C, cv2.THRESH_BINARY,11,2)
+
     filename = "temp/{}.png".format(os.getpid())
     cv2.imwrite(filename, gray)
-    text = pytesseract.image_to_string(Image.open(filename))
+    if l == None:
+        text = pytesseract.image_to_string(Image.open(filename))
+    else:
+        text = pytesseract.image_to_string(Image.open(filename),lang=l,config='digits')
     os.remove(filename)
     if debug:
         return gray
     else :
         return text
+
+def saveSnap(image):
+    filename = "screencap/{}.png".format(os.getpid())
+    cv2.imwrite(filename, image)
+    print('Saved.')
 # function
+def findCenter(startX,endX,startY,endY):
+    # Return x,y
+    midh = endX - startX
+    midv = endY - startY
+    x = startX + (midh/2)
+    y = startY + (midv/2)
+    return x,y
+
 def tap(x,y):
     cmd = 'input tap {} {}'.format(x,y)
+    device.shell(cmd)
+
+def swipe(x,y,x1,y1,d):
+    cmd = 'input swipe {} {} {} {} {}'.format(x,y,x1,y1,d)
     device.shell(cmd)
 
 def screencap():
@@ -147,27 +167,95 @@ def debug_show(image,name='vision'):
             running = False
             break
 
+def image_resize(image, width = None, height = None, inter = cv2.INTER_AREA):
+    # initialize the dimensions of the image to be resized and
+    # grab the image size
+    dim = None
+    (h, w) = image.shape[:2]
+
+    # if both the width and height are None, then return the
+    # original image
+    if width is None and height is None:
+        return image
+
+    # check to see if the width is None
+    if width is None:
+        # calculate the ratio of the height and construct the
+        # dimensions
+        r = height / float(h)
+        dim = (int(w * r), height)
+
+    # otherwise, the height is None
+    else:
+        # calculate the ratio of the width and construct the
+        # dimensions
+        r = width / float(w)
+        dim = (width, int(h * r))
+
+    # resize the image
+    resized = cv2.resize(image, dim, interpolation = inter)
+
+    # return the resized image
+    return resized
+
+def buyStamina():
+    global stamina_refresh
+    tap(788,500)
+    stamina_refresh += 1
+    time.sleep(1)
+    tap(788,500)
+    img = screencap()
+    while not imageRecognition(img, cv2.imread(r'Asset/ui/stamina-recharged.png',0), 0.8, 'bool'):
+        time.sleep(1)
+        print('connecting..')
+        img = screencap()
+    tap(645, 500)
+    print('Stamina recharged')
+    time.sleep(1)
+
 # automation
-def stage_menu(enter=True):
-    if enter:
+def stage_menu(enter='dg',item=None):
+    global stamina_refresh, stamina_refresh_max, recharge_stamina
+    print('entering stage...')
+    if enter == 'dg':
         img = screencap()
         tmplt = cv2.imread(r'Asset/ui/start.png',0)
         if imageRecognition(img, tmplt, 0.8, 'bool') :
             tap(1120, 600)
         return assemble_party()
+    elif enter == 'farm':
+        img = screencap()
+        need = image_resize(item,height=100) # Because Size Matter!
+        time.sleep(1)
+        tap(1120, 600)
+        time.sleep(1)
+        img = screencap()
+        if imageRecognition(img, cv2.imread(r'Asset/ui/recharge-stamina.png',0), 0.8, 'bool'):
+            if recharge_stamina and stamina_refresh_max>stamina_refresh:
+                buyStamina()
+            else:
+                print("No stamina")
+                return False
+        if assemble_party():
+            return findItems(item=need)
+        else:
+            return False
+        #y, x = imageRecognition(img, cv2.cvtColor(need, cv2.COLOR_BGR2GRAY), 0.4, 'loc')
 
 def assemble_party():
-        while ocr(screencap()[35:75,508:758], 'thresh')[0:14] != 'Assemble Party':
-            time.sleep(1)
-        tmplt = cv2.imread(r'Asset/ui/no-chara.png',0)
-        if imageRecognition(screencap(), tmplt, 0.997, 'bool',False,True) > 0:
-            tap(1140, 120)
-            time.sleep(1)
-            tap(1040, 230)
+    print('Assembling party...')
+    while ocr(screencap()[35:75,508:758], 'thresh')[0:14] != 'Assemble Party':
         time.sleep(1)
-        tap(1115,600)
-        time.sleep(3)
-        return battle()
+    tmplt = cv2.imread(r'Asset/ui/no-chara.png',0)
+    if imageRecognition(screencap(), tmplt, 0.997, 'bool',False,True) > 0:
+        tap(1140, 120)
+        time.sleep(1)
+        tap(1040, 230)
+    time.sleep(1)
+    tap(1115,600)
+    print('Entering battle...')
+    time.sleep(3)
+    return battle()
 
 def win_stage(image):
     tplt_win = cv2.imread(r'Asset/ui/win.png',0)
@@ -176,33 +264,43 @@ def win_stage(image):
     failed = imageRecognition(image, tplt_fail, 0.7, 'bool')
     if failed:
         return False
-    else:
+    elif win:
         return True
+    else:
+        return None
 
 def battle():
     i = 0
+    print('[IN BATTLE]')
     while True:
         time.sleep(1)
         img = screencap() 
         clock = ocr(img[20:47,1055:1125], 'thresh')[0:5]
         if clock[0:1] == '1' or clock[0:1] == 'i' or clock[0:1] == '0' or clock[0:1] == 'O' or clock[0:1] == 'o' :
-            print(clock)
+            time.sleep(1)
             i = 0
         else :
             i += 1
-            print('[{}]time not found, retrying...'.format(i))
-            if i > 4:
+            if i > 3:
                 while not imageRecognition(img, cv2.imread(r'Asset/ui/next.png',0), 0.7, 'bool'):
                     time.sleep(2)
                     img = screencap()
                     if imageRecognition(img, cv2.imread(r'Asset/ui/skip.png',0), 0.8, 'bool'):
                         print('love-up')
                         tap(1195, 50)
-                    print('waiting...')
-                print('done')
+                    if imageRecognition(img, cv2.imread(r'Asset/ui/level-up.png',0), 0.8, 'bool'):
+                        print('level-up')
+                        tap(645, 500) 
+                    if win_stage(screencap()) == False:
+                        print('FAILED')
+                        return False
+                    print('Connecting..')
+                print('[END OF BATTLE]')
                 tap(1110, 670)
                 break
-    return win_stage(screencap())
+    print('WIN')
+    return True
+    
 
 def dungeon():
     time.sleep(1)
@@ -242,40 +340,86 @@ def dungeon():
             print('cancelling...')
             break
             
-def findItems():
+def findItems(lists=True,item=None):
     print('evaluating drop...')
     time.sleep(5)
     img = screencap()
     if imageRecognition(img, cv2.imread(r'Asset/ui/limited-shop.png',0), 0.8, 'bool'):
         print('Limited shop is open')
         return
-    for i in useable:
-        print('searching..')
-        time.sleep(0.5)
-        if imageRecognition(img, cv2.imread(r'Asset/equipment/useable/{}.png'.format(i),0), 0.8, 'bool') :
-            print(i,'Found!')
+    if lists:
+        for i in useable:
+            if imageRecognition(img, cv2.imread(r'Asset/equipment/useable/{}.png'.format(i),0), 0.9, 'bool',True) :
+                print(i,'Found!')
+                if i == 'skip-ticket':
+                    global ticket
+                    ticket += 1
+            img = screencap()
+    if item is not None:
+        print('searching needed item..')
+        image_resize(item,height=125)
         img = screencap()
-    print('Done evaluating')
+        if imageRecognition(img, cv2.cvtColor(item, cv2.COLOR_BGR2GRAY), 0.25, 'bool',True):
+            print("Item Found!")
+            global equipment
+            equipment += 1
     tap(1110,655)
+    return True
         
 def quest():
     print(stage_menu())
     findItems()
 
-        
+def optimize():
+    global run, equipment
+    run += 1
+    print('[{}] Optimizing..'.format(run))
+    img = screencap()
+    while not imageRecognition(img, cv2.imread(r'Asset/ui/optimize.png',0), 0.7, 'bool'):
+        time.sleep(1)
+        img = screencap()
+    tap(500, 580)
+    time.sleep(1)
+    img = screencap()
+    if imageRecognition(img, cv2.imread(r'Asset/ui/enhance.png',0), 0.7, 'bool'):
+        tap(787, 638)
+        print(equipment,'Equipment gathered')
+        equipment = 0
+        print('Equipped / leveled up')
+        optimize()
+    elif imageRecognition(img, cv2.imread(r'Asset/ui/recomended-quest.png',0), 0.8, 'bool'):
+        # I need to train my tesseract, so it can read numbers
+        #print(ocr(img[330:348,420:450], 'thresh','digits'))
+        #debug_show(ocr(img[330:348,420:450], 'thresh',debug=True))
+        need = img[270:350,365:445]
+        x,y = findCenter(365, 445, 270, 350)
+        tap(x,y)
+        time.sleep(1)
+        if not stage_menu('farm',need):
+            return
+        optimize()
+    elif imageRecognition(img, cv2.imread(r'Asset/ui/refine.png',0), 0.8, 'bool'):
+        print('All available equiment already equipped')
+        tap(640, 640)
+        return
 
-
+# Connect to ADB
 client = AdbClient(host="127.0.0.1", port=5037) #connect adb
 devices = client.devices() 
-
 if len(devices) == 0: # check if any devices is connected
     print('no device attached')
     quit()
-
 device = devices[0] # sellect first devices
-
-dungeon()
-
+# Initialize
+stamina_refresh = 0
+stamina_refresh_max = 3
+recharge_stamina = False
+ticket = 0
+equipment = 0
+run = 0
+# Runtime
+optimize()
+print("Ticket get",ticket)
 """ Main Menu
 If active, y = 700
 home R = 255, x = 180
