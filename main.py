@@ -6,10 +6,30 @@ import numpy as np
 from PIL import Image
 import os
 import pytesseract
+from os import walk
 
 # Equipment list
-useable = ['boss-ticket','skip-ticket']
+max_tier = 3
+tierPath = []
+for i in range(max_tier+1):
+    tierPath.append("D:/MEDIA/Code/Python/KyaruAuto/Assets/equipment/Tier"+str(i))
+mc = "D:/MEDIA/Code/Python/KyaruAuto/Assets/equipment/useable"
+eq = {}
+items = []
+ij = []
+for (dirpath, dirnames, filenames) in walk(mc):
+    for j in filenames:
+        j = j.replace(".png", "")
+        ij.append(j)
+    items.extend(ij)
 
+for i in range(max_tier+1):
+    ij = []
+    for (dirpath, dirnames, filenames) in walk(tierPath[i]):
+        for j in filenames:
+            j = j.replace(".png", "")
+            ij.append(j)
+        eq[i] = ij
 # Module
 def textDetection(image):
     orig = image.copy()
@@ -79,9 +99,12 @@ def textDetection(image):
         cv2.rectangle(orig, (startX, startY), (endX, endY), (0, 255, 0), 2)
     return orig
 
-def imageRecognition(image,template,threshold,out,debug = False,multi=False,normalize=False):
-    img_gray = cv2.cvtColor(image, cv2.COLOR_BGR2GRAY)
-    res = cv2.matchTemplate(img_gray,template,cv2.TM_CCOEFF_NORMED)
+def imageRecognition(image,template,threshold,out,debug = False,multi=False,normalize=False,color=False):
+    if color:
+        res = cv2.cv2.matchTemplate(image,template,cv2.TM_CCORR_NORMED)
+    else: 
+        img_gray = cv2.cvtColor(image, cv2.COLOR_BGR2GRAY)
+        res = cv2.matchTemplate(img_gray,template,cv2.TM_CCOEFF_NORMED)
     if normalize:
         cv2.normalize( res, res, 0, 1, cv2.NORM_MINMAX, -1 )
     if multi:
@@ -109,6 +132,8 @@ def imageRecognition(image,template,threshold,out,debug = False,multi=False,norm
         elif out == 'loc':
             x,y = findCenter(startX, endX, startY, endY)
             return y,x
+        elif out == 'locr':
+            return startY, endY, startX, endX
         elif out == 'bool':
             return max_val > threshold
         else:
@@ -129,7 +154,7 @@ def ocr(image,method,l=None,debug=False):
     if l == None:
         text = pytesseract.image_to_string(Image.open(filename))
     else:
-        text = pytesseract.image_to_string(Image.open(filename),lang=l,config='digits')
+        text = pytesseract.image_to_string(Image.open(filename),lang=l)
     os.remove(filename)
     if debug:
         return gray
@@ -170,7 +195,6 @@ def debug_show(image,name='vision'):
             running = False
             break
 
-
 def image_resize(image, width = None, height = None, inter = cv2.INTER_AREA):
     # initialize the dimensions of the image to be resized and
     # grab the image size
@@ -209,7 +233,7 @@ def buyStamina():
     time.sleep(1)
     tap(788,500)
     img = screencap()
-    while not imageRecognition(img, cv2.imread(r'Asset/ui/stamina-recharged.png',0), 0.8, 'bool'):
+    while not imageRecognition(img, cv2.imread(r'Assets/ui/stamina-recharged.png',0), 0.8, 'bool'):
         time.sleep(1)
         print('connecting..')
         img = screencap()
@@ -220,7 +244,7 @@ def buyStamina():
 def shop_buyAll(bonus=True):
     #check if in shop
     img = screencap()
-    while not imageRecognition(img, cv2.imread(r'Asset/ui/shop.png',0), 0.9, 'bool'):
+    while not imageRecognition(img, cv2.imread(r'Assets/ui/shop.png',0), 0.9, 'bool'):
         time.sleep(1)
         img = screencap()
         print('Connecting..')
@@ -236,14 +260,14 @@ def shop_buyAll(bonus=True):
     time.sleep(1)
     img = screencap()
     i = 0
-    while not imageRecognition(img, cv2.imread(r'Asset/ui/shop.png',0), 0.9, 'bool'):
+    while not imageRecognition(img, cv2.imread(r'Assets/ui/shop.png',0), 0.9, 'bool'):
         img = screencap()
         if i < 2:
-            while not imageRecognition(img, cv2.imread(r'Asset/ui/ok.png',0), 0.8, 'bool'):
+            while not imageRecognition(img, cv2.imread(r'Assets/ui/ok.png',0), 0.8, 'bool'):
                 time.sleep(1)
                 print('Connecting...')
                 img = screencap()
-            y,x = imageRecognition(img, cv2.imread(r'Asset/ui/ok.png',0), 0.8, 'loc')
+            y,x = imageRecognition(img, cv2.imread(r'Assets/ui/ok.png',0), 0.8, 'loc')
             tap(x,y)
             i+=1
             time.sleep(1)
@@ -252,7 +276,7 @@ def shop_buyAll(bonus=True):
     tap(787, 500)
     if bonus:
         img = screencap()
-        while not imageRecognition(img, cv2.imread(r'Asset/ui/close-bonus.png',0), 0.8, 'bool'):
+        while not imageRecognition(img, cv2.imread(r'Assets/ui/close-bonus.png',0), 0.8, 'bool'):
             time.sleep(1)
             img = screencap()
             print('Connecting...')
@@ -267,21 +291,27 @@ def stage_menu(enter='dg',item=None):
     print('entering stage...')
     if enter == 'dg':
         img = screencap()
-        while not imageRecognition(img, cv2.imread(r'Asset/ui/start.png',0), 0.8, 'bool'):
+        while not imageRecognition(img, cv2.imread(r'Assets/ui/start.png',0), 0.8, 'bool'):
             time.sleep(1)
             img = screencap()
         tap(1120, 600)
         return assemble_party()
     elif enter == 'farm':
         img = screencap()
-        need = image_resize(item,height=100) # Because Size Matter!
         time.sleep(1)
+        item = image_resize(item,height=100)
+        img = screencap()
+        y,yy,x,xx = imageRecognition(img, cv2.cvtColor(item, cv2.COLOR_BGR2GRAY),0.8 , "locr")
+        need = img[y:yy,x:xx]
+        need = image_resize(need,height=128)
         tap(1120, 600)
         time.sleep(1)
         img = screencap()
-        if imageRecognition(img, cv2.imread(r'Asset/ui/recharge-stamina.png',0), 0.8, 'bool'):
+        if imageRecognition(img, cv2.imread(r'Assets/ui/recharge-stamina.png',0), 0.8, 'bool'):
             if recharge_stamina and stamina_refresh_max>stamina_refresh:
                 buyStamina()
+                time.sleep(1)
+                tap(1120, 600)
             else:
                 print("No stamina")
                 return False
@@ -292,7 +322,7 @@ def stage_menu(enter='dg',item=None):
         #y, x = imageRecognition(img, cv2.cvtColor(need, cv2.COLOR_BGR2GRAY), 0.4, 'loc')
     elif enter == 'grotto':
         img = screencap()
-        while not imageRecognition(img, cv2.imread(r'Asset/ui/start.png',0), 0.8, 'bool'):
+        while not imageRecognition(img, cv2.imread(r'Assets/ui/start.png',0), 0.8, 'bool'):
             time.sleep(1)
             img = screencap()
         tap(1120, 600) 
@@ -308,7 +338,7 @@ def assemble_party():
     print('Assembling party...')
     while ocr(screencap()[35:75,508:758], 'thresh')[0:14] != 'Assemble Party':
         time.sleep(1)
-    tmplt = cv2.imread(r'Asset/ui/no-chara.png',0)
+    tmplt = cv2.imread(r'Assets/ui/no-chara.png',0)
     if imageRecognition(screencap(), tmplt, 0.997, 'bool',False,True) > 0:
         tap(1140, 120)
         time.sleep(1)
@@ -320,8 +350,8 @@ def assemble_party():
     return battle()
 
 def win_stage(image):
-    tplt_win = cv2.imread(r'Asset/ui/win.png',0)
-    tplt_fail = cv2.imread(r'Asset/ui/failed.png',0)
+    tplt_win = cv2.imread(r'Assets/ui/win.png',0)
+    tplt_fail = cv2.imread(r'Assets/ui/failed.png',0)
     win = imageRecognition(image, tplt_win, 0.1, 'bool')
     failed = imageRecognition(image, tplt_fail, 0.7, 'bool')
     if failed:
@@ -344,13 +374,13 @@ def battle():
         # else :
         # i += 1
         # if i > 3:
-        while not imageRecognition(img, cv2.imread(r'Asset/ui/next.png',0), 0.65, 'bool'):
+        while not imageRecognition(img, cv2.imread(r'Assets/ui/next.png',0), 0.65, 'bool'):
             time.sleep(3)
             img = screencap()
-            if imageRecognition(img, cv2.imread(r'Asset/ui/skip.png',0), 0.8, 'bool'):
+            if imageRecognition(img, cv2.imread(r'Assets/ui/skip.png',0), 0.8, 'bool'):
                 print('love-up')
                 tap(1195, 50)
-            if imageRecognition(img, cv2.imread(r'Asset/ui/level-up.png',0), 0.8, 'bool'):
+            if imageRecognition(img, cv2.imread(r'Assets/ui/level-up.png',0), 0.8, 'bool'):
                 print('level-up')
                 tap(645, 500) 
             if win_stage(screencap()) == False:
@@ -365,7 +395,7 @@ def battle():
 def grotto():
     # check if in grotto
     img = screencap()
-    while not imageRecognition(img, cv2.imread(r'Asset/ui/grotto.png',0), 0.8, 'bool'):
+    while not imageRecognition(img, cv2.imread(r'Assets/ui/grotto.png',0), 0.8, 'bool'):
         time.sleep(1)
         print('Connecting...')
         img = screencap()
@@ -428,56 +458,77 @@ def dungeon(dg=0,enter=False):
         return
     if enter:
         if dg == 1:
-            folder = 'Asset/dungeon/deep_wood/'
+            folder = 'Assets/dungeon/deep_wood/'
             run(folder)
     else:
         img = screencap()
-        while not imageRecognition(img, cv2.imread(r'Asset/ui/dungeon.png',0), 0.8, 'bool'):
+        while not imageRecognition(img, cv2.imread(r'Assets/ui/dungeon.png',0), 0.8, 'bool'):
             time.sleep(1)
             img = screencap()
         if dg == 1:
-            folder = 'Asset/dungeon/deep_wood/'
+            folder = 'Assets/dungeon/deep_wood/'
             tap(480, 300)
             time.sleep(1)
-            while not imageRecognition(img, cv2.imread(r'Asset/ui/ok.png',0), 0.8, 'bool',True):
+            while not imageRecognition(img, cv2.imread(r'Assets/ui/ok.png',0), 0.8, 'bool',True):
                 time.sleep(1)
                 img = screencap()
-            y,x = imageRecognition(img, cv2.imread(r'Asset/ui/ok.png',0), 0.8, 'loc')
+            y,x = imageRecognition(img, cv2.imread(r'Assets/ui/ok.png',0), 0.8, 'loc')
             tap(x, y)
             img = screencap()
-            while not imageRecognition(img, cv2.imread(r'Asset/ui/deepwood_oak.png',0), 0.8, 'bool'):
+            while not imageRecognition(img, cv2.imread(r'Assets/ui/deepwood_oak.png',0), 0.8, 'bool'):
                 time.sleep(1)
                 img = screencap()
             run(folder)
-
-            
-def findItems(lists=True,item=None):
+          
+def findItems(msc=True,item=None,equipments=True):
     print('evaluating drop...')
+    global equipment_get
+    found = []
     time.sleep(5)
     img = screencap()
-    if imageRecognition(img, cv2.imread(r'Asset/ui/limited-shop.png',0), 0.8, 'bool'):
+    if imageRecognition(img, cv2.imread(r'Assets/ui/limited-shop.png',0), 0.8, 'bool'):
         print('Limited shop is open')
         global buy_bonus
         if buy_bonus:
+            tap(780,500)
             shop_buyAll()
+            return
         else:
             return
-    if lists:
-        for i in useable:
-            if imageRecognition(img, cv2.imread(r'Asset/equipment/useable/{}.png'.format(i),0), 0.9, 'bool',True) :
+    if msc:
+        global items
+        for i in items:
+            if imageRecognition(img, cv2.imread(r'Assets/equipment/useable/{}.png'.format(i),0), 0.9, 'bool') :
                 print(i,'Found!')
                 if i == 'skip-ticket':
                     global ticket
                     ticket += 1
             img = screencap()
-    if item is not None:
-        print('searching needed item..')
-        image_resize(item,height=125)
+    if equipments:
+        global eq
         img = screencap()
-        if imageRecognition(img, cv2.cvtColor(item, cv2.COLOR_BGR2GRAY), 0.25, 'bool',True):
-            print("Item Found!")
-            global equipment
-            equipment += 1
+        for k in eq:
+            print('[{}/{}]Analyzing..'.format(k,len(eq)-1))
+            for v in eq[k]:
+                tmplt = cv2.imread(r'Assets/equipment/Tier{}/{}.png'.format(k,v))
+                if imageRecognition(img, tmplt, 0.97, 'bool',color=True):
+                    print(v,"Found")
+                    found.append(v)
+                    if item is not None:
+                        if imageRecognition(item, cv2.cvtColor(tmplt,cv2.COLOR_BGR2GRAY), 0.2, "bool",True):
+                            print("Item Found!")
+    for i in found:
+        if i in equipment_get:
+            j = equipment_get.index(i)
+            name = equipment_get[j]
+            if isnumeric(name[0:2]):
+                n = int(name[0:2])
+                n += 1
+            elif isnumeric(name[0:1]):
+                n = int(name[0:1])
+                n += 1
+        else:
+            equipment_get.append("1x "+ i)
     tap(1110,655)
     return True
         
@@ -486,34 +537,32 @@ def quest():
     findItems()
 
 def optimize():
-    global run, equipment
+    global run
     run += 1
     print('[{}] Optimizing..'.format(run))
     img = screencap()
-    while not imageRecognition(img, cv2.imread(r'Asset/ui/optimize.png',0), 0.7, 'bool'):
+    while not imageRecognition(img, cv2.imread(r'Assets/ui/optimize.png',0), 0.7, 'bool'):
         time.sleep(1)
         img = screencap()
     tap(500, 580)
     time.sleep(1)
     img = screencap()
-    if imageRecognition(img, cv2.imread(r'Asset/ui/enhance.png',0), 0.7, 'bool'):
+    if imageRecognition(img, cv2.imread(r'Assets/ui/enhance.png',0), 0.7, 'bool'):
         tap(787, 638)
-        print(equipment,'Equipment gathered')
-        equipment = 0
         print('Equipped / leveled up')
         optimize()
-    elif imageRecognition(img, cv2.imread(r'Asset/ui/recomended-quest.png',0), 0.8, 'bool'):
+    elif imageRecognition(img, cv2.imread(r'Assets/ui/recomended-quest.png',0), 0.8, 'bool'):
         # I need to train my tesseract, so it can read numbers
         #print(ocr(img[330:348,420:450], 'thresh','digits'))
         #debug_show(ocr(img[330:348,420:450], 'thresh',debug=True))
-        need = img[270:350,365:445]
+        need = screencap()[265:350,365:445]
         x,y = findCenter(365, 445, 270, 350)
         tap(x,y)
         time.sleep(1)
         if not stage_menu('farm',need):
             return
         optimize()
-    elif imageRecognition(img, cv2.imread(r'Asset/ui/refine.png',0), 0.8, 'bool'):
+    elif imageRecognition(img, cv2.imread(r'Assets/ui/refine.png',0), 0.8, 'bool'):
         print('All available equiment already equipped')
         tap(640, 640)
         return
@@ -521,7 +570,7 @@ def optimize():
 def daily():
     #check menu bar
     img = screencap()
-    if imageRecognition(img, cv2.imread(r'Asset/ui/menu-bar.png',0), 0.7, 'bool'):
+    if imageRecognition(img, cv2.imread(r'Assets/ui/menu-bar.png',0), 0.7, 'bool'):
         if img[700,180,2] == 255:
             print('IN Home')
         else:
@@ -532,7 +581,7 @@ def daily():
         print('No menu bar found, please go to home first')
         return
     img = screencap()
-    while not imageRecognition(img, cv2.imread(r'Asset/ui/notices.png',0), 0.8, 'bool'):
+    while not imageRecognition(img, cv2.imread(r'Assets/ui/notices.png',0), 0.8, 'bool'):
         time.sleep(1)
         img = screencap()
 
@@ -553,21 +602,23 @@ devices = client.devices()
 if len(devices) == 0: # check if any devices is connected
     print('no device attached')
     quit()
+
 device = devices[0] # sellect first devices
 # Initialize
-stamina_refresh = 0
+equipment_get = []
+stamina_refresh = 1
 stamina_refresh_max = 3
-recharge_stamina = False
+recharge_stamina = True
 buy_bonus = True
 ticket = 0
-equipment = 0
 run = 0
 # Runtime
 
-shop_buyAll()
+optimize()
 
 # Summary
-print("Ticket get :",ticket)
+print("Ticket get : ",ticket)
+print("Equipment get : ", equipment_get)
 """ Main Menu
 If active, y = 700
 home R = 255, x = 180
