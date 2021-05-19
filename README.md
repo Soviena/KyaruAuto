@@ -3,14 +3,14 @@
 
 Still in development
 ## Features
-- Auto Dungeon clear (only hard dungeon supported for now)
-- go to dungeon, and run main.py. it should complete floor 1 - 10
-- there should be 1 party set up in my party list
-- if there is 1 stage failed, the bot will stop
+- Auto dungeon
+- Auto optimize chara
+- Auto Grotto
+- Buy all in bonus shop
+
 
 ## Roadmap
-- Equipment farming
-- Auto daily mission
+- Auto daily mission (in development)
 - Set Up party
 
 ## Installation
@@ -30,6 +30,7 @@ pip install pytesseract
 
 | Name | Link |
 | ------ | ------ |
+| ADB | https://developer.android.com/studio/command-line/adb |
 | Python | https://www.python.org/downloads/ |
 | Tesseract-OCR | https://github.com/UB-Mannheim/tesseract/wiki |
 | EAST (already included) | https://github.com/oyyd/frozen_east_text_detection.pb/blob/master/frozen_east_text_detection.pb |
