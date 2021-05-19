@@ -111,6 +111,9 @@ def imageRecognition(image,template,threshold,out,debug = False,multi=False,norm
             return y,x
         elif out == 'bool':
             return max_val > threshold
+        else:
+            # put error here
+            return None
 
 def ocr(image,method,l=None,debug=False):
     gray = cv2.cvtColor(image, cv2.COLOR_BGR2GRAY)
@@ -167,6 +170,7 @@ def debug_show(image,name='vision'):
             running = False
             break
 
+
 def image_resize(image, width = None, height = None, inter = cv2.INTER_AREA):
     # initialize the dimensions of the image to be resized and
     # grab the image size
@@ -213,15 +217,60 @@ def buyStamina():
     print('Stamina recharged')
     time.sleep(1)
 
+def shop_buyAll(bonus=True):
+    #check if in shop
+    img = screencap()
+    while not imageRecognition(img, cv2.imread(r'Asset/ui/shop.png',0), 0.9, 'bool'):
+        time.sleep(1)
+        img = screencap()
+        print('Connecting..')
+    x = 515
+    y = 200
+    for i in range(2): # select all
+        for j in range(4):
+            tap(x,y)
+            x += 220
+        x = 515
+        y += 350
+    tap(1050,585) #buy
+    time.sleep(1)
+    img = screencap()
+    i = 0
+    while not imageRecognition(img, cv2.imread(r'Asset/ui/shop.png',0), 0.9, 'bool'):
+        img = screencap()
+        if i < 2:
+            while not imageRecognition(img, cv2.imread(r'Asset/ui/ok.png',0), 0.8, 'bool'):
+                time.sleep(1)
+                print('Connecting...')
+                img = screencap()
+            y,x = imageRecognition(img, cv2.imread(r'Asset/ui/ok.png',0), 0.8, 'loc')
+            tap(x,y)
+            i+=1
+            time.sleep(1)
+    tap(777, 577) #reset
+    time.sleep(1)
+    tap(787, 500)
+    if bonus:
+        img = screencap()
+        while not imageRecognition(img, cv2.imread(r'Asset/ui/close-bonus.png',0), 0.8, 'bool'):
+            time.sleep(1)
+            img = screencap()
+            print('Connecting...')
+        tap(50,50)
+    time.sleep(2)
+    tap(50, 50)
+    print('Done Buy All')
+
 # automation
 def stage_menu(enter='dg',item=None):
     global stamina_refresh, stamina_refresh_max, recharge_stamina
     print('entering stage...')
     if enter == 'dg':
         img = screencap()
-        tmplt = cv2.imread(r'Asset/ui/start.png',0)
-        if imageRecognition(img, tmplt, 0.8, 'bool') :
-            tap(1120, 600)
+        while not imageRecognition(img, cv2.imread(r'Asset/ui/start.png',0), 0.8, 'bool'):
+            time.sleep(1)
+            img = screencap()
+        tap(1120, 600)
         return assemble_party()
     elif enter == 'farm':
         img = screencap()
@@ -241,6 +290,19 @@ def stage_menu(enter='dg',item=None):
         else:
             return False
         #y, x = imageRecognition(img, cv2.cvtColor(need, cv2.COLOR_BGR2GRAY), 0.4, 'loc')
+    elif enter == 'grotto':
+        img = screencap()
+        while not imageRecognition(img, cv2.imread(r'Asset/ui/start.png',0), 0.8, 'bool'):
+            time.sleep(1)
+            img = screencap()
+        tap(1120, 600) 
+        assemble_party()
+        time.sleep(1)
+        tap(888, 655)
+        time.sleep(1)
+        tap(795,490)
+        battle()
+        tap(1110, 670)
 
 def assemble_party():
     print('Assembling party...')
@@ -275,70 +337,119 @@ def battle():
     while True:
         time.sleep(1)
         img = screencap() 
-        clock = ocr(img[20:47,1055:1125], 'thresh')[0:5]
-        if clock[0:1] == '1' or clock[0:1] == 'i' or clock[0:1] == '0' or clock[0:1] == 'O' or clock[0:1] == 'o' :
-            time.sleep(1)
-            i = 0
-        else :
-            i += 1
-            if i > 3:
-                while not imageRecognition(img, cv2.imread(r'Asset/ui/next.png',0), 0.7, 'bool'):
-                    time.sleep(2)
-                    img = screencap()
-                    if imageRecognition(img, cv2.imread(r'Asset/ui/skip.png',0), 0.8, 'bool'):
-                        print('love-up')
-                        tap(1195, 50)
-                    if imageRecognition(img, cv2.imread(r'Asset/ui/level-up.png',0), 0.8, 'bool'):
-                        print('level-up')
-                        tap(645, 500) 
-                    if win_stage(screencap()) == False:
-                        print('FAILED')
-                        return False
-                    print('Connecting..')
-                print('[END OF BATTLE]')
-                tap(1110, 670)
-                break
+        # clock = ocr(img[20:47,1055:1125], 'thresh')[0:5]
+        # if clock[0:1] == '1' or clock[0:1] == 'i' or clock[0:1] == '0' or clock[0:1] == 'O' or clock[0:1] == 'o' :
+        #     time.sleep(1)
+        #     i = 0
+        # else :
+        # i += 1
+        # if i > 3:
+        while not imageRecognition(img, cv2.imread(r'Asset/ui/next.png',0), 0.65, 'bool'):
+            time.sleep(3)
+            img = screencap()
+            if imageRecognition(img, cv2.imread(r'Asset/ui/skip.png',0), 0.8, 'bool'):
+                print('love-up')
+                tap(1195, 50)
+            if imageRecognition(img, cv2.imread(r'Asset/ui/level-up.png',0), 0.8, 'bool'):
+                print('level-up')
+                tap(645, 500) 
+            if win_stage(screencap()) == False:
+                print('FAILED')
+                return False
+        print('[END OF BATTLE]')
+        tap(1110, 670)
+        break
     print('WIN')
     return True
     
-
-def dungeon():
-    time.sleep(1)
+def grotto():
+    # check if in grotto
     img = screencap()
-    floor = ocr(img[557:590,275:345], 'thresh')
-    if floor[0:2] == '10':
-        cur_floor = 10
-        max_floor = 10
-    elif floor[0:1] == 'S' or floor[0:1] == 's' :
-        cur_floor = 5
-        max_floor = 10
-    else:
-        cur_floor = floor[0:1]
-        max_floor = floor[2:4]
-        cur_floor = int(cur_floor)
-        max_floor = int(max_floor)
-    while cur_floor <= max_floor:
-        img = screencap()
-        print(cur_floor,max_floor,sep="/")
-        path = "Asset/dungeon/deep_wood/floor{}.png".format(cur_floor)
-        tmplt = cv2.imread(r"{}".format(path),0)
-        y,x = imageRecognition(img, tmplt, 0.8, 'loc')
-        tap(x,y-5)
+    while not imageRecognition(img, cv2.imread(r'Asset/ui/grotto.png',0), 0.8, 'bool'):
         time.sleep(1)
-        result = stage_menu()
-        print(result)
-        if result:
-            time.sleep(5)
-            tap(640, 636)
-            cur_floor += 1
-            if cur_floor > 10:
-                break
-            else:
-                print('going next floor')
-                time.sleep(8)
-        else :
-            print('cancelling...')
-            break
+        print('Connecting...')
+        img = screencap()
+    x = 770
+    y = 220
+    x1 = 1115
+    for i in range(2):
+        tap(x, y)
+        time.sleep(1)
+        img = screencap()
+        if img[y,x1,0] == 255:
+            tap(x1, y)
+        else:
+            tap(x1, 370)
+        time.sleep(1)
+        stage_menu(enter='grotto')
+        print('done')
+    x += 280
+    time.sleep(1)
+    tap(50,50)
+    return
+
+def dungeon(dg=0,enter=False):
+    def run(fd):
+        img = screencap()
+        floor = ocr(img[557:590,275:345], 'thresh')
+        if floor[0:2] == '10':
+            cur_floor = 10
+            max_floor = 10
+        elif floor[0:1] == 'S' or floor[0:1] == 's' :
+            cur_floor = 5
+            max_floor = 10
+        else:
+            cur_floor = floor[0:1]
+            max_floor = floor[2:4]
+            cur_floor = int(cur_floor)
+            max_floor = int(max_floor)
+        while cur_floor <= max_floor:
+            img = screencap()
+            print(cur_floor,max_floor,sep="/")
+            path = "{}floor{}.png".format(folder,cur_floor)
+            tmplt = cv2.imread(r"{}".format(path),0)
+            y,x = imageRecognition(img, tmplt, 0.8, 'loc')
+            tap(x,y-15)
+            time.sleep(1)
+            result = stage_menu()
+            print(result)
+            if result:
+                time.sleep(5)
+                tap(640, 636)
+                cur_floor += 1
+                if cur_floor > 10:
+                    break
+                else:
+                    print('going next floor')
+                    time.sleep(8)
+            else :
+                print('cancelling...')
+                break       
+        return
+    if enter:
+        if dg == 1:
+            folder = 'Asset/dungeon/deep_wood/'
+            run(folder)
+    else:
+        img = screencap()
+        while not imageRecognition(img, cv2.imread(r'Asset/ui/dungeon.png',0), 0.8, 'bool'):
+            time.sleep(1)
+            img = screencap()
+        if dg == 1:
+            folder = 'Asset/dungeon/deep_wood/'
+            tap(480, 300)
+            time.sleep(1)
+            while not imageRecognition(img, cv2.imread(r'Asset/ui/ok.png',0), 0.8, 'bool',True):
+                time.sleep(1)
+                img = screencap()
+            y,x = imageRecognition(img, cv2.imread(r'Asset/ui/ok.png',0), 0.8, 'loc')
+            tap(x, y)
+            img = screencap()
+            while not imageRecognition(img, cv2.imread(r'Asset/ui/deepwood_oak.png',0), 0.8, 'bool'):
+                time.sleep(1)
+                img = screencap()
+            run(folder)
+
             
 def findItems(lists=True,item=None):
     print('evaluating drop...')
@@ -346,7 +457,11 @@ def findItems(lists=True,item=None):
     img = screencap()
     if imageRecognition(img, cv2.imread(r'Asset/ui/limited-shop.png',0), 0.8, 'bool'):
         print('Limited shop is open')
-        return
+        global buy_bonus
+        if buy_bonus:
+            shop_buyAll()
+        else:
+            return
     if lists:
         for i in useable:
             if imageRecognition(img, cv2.imread(r'Asset/equipment/useable/{}.png'.format(i),0), 0.9, 'bool',True) :
@@ -403,6 +518,35 @@ def optimize():
         tap(640, 640)
         return
 
+def daily():
+    #check menu bar
+    img = screencap()
+    if imageRecognition(img, cv2.imread(r'Asset/ui/menu-bar.png',0), 0.7, 'bool'):
+        if img[700,180,2] == 255:
+            print('IN Home')
+        else:
+            print('Clicking Home')
+            tap(180, 700)
+            time.sleep(1)
+    else :
+        print('No menu bar found, please go to home first')
+        return
+    img = screencap()
+    while not imageRecognition(img, cv2.imread(r'Asset/ui/notices.png',0), 0.8, 'bool'):
+        time.sleep(1)
+        img = screencap()
+
+    # Goto quest
+    tap(560,700)
+    time.sleep(1)
+    # tap grotto
+    # tap(985,185)
+    # grotto()
+    time.sleep(1)
+    tap(1170,180)
+    dungeon(dg=1)
+
+
 # Connect to ADB
 client = AdbClient(host="127.0.0.1", port=5037) #connect adb
 devices = client.devices() 
@@ -414,12 +558,16 @@ device = devices[0] # sellect first devices
 stamina_refresh = 0
 stamina_refresh_max = 3
 recharge_stamina = False
+buy_bonus = True
 ticket = 0
 equipment = 0
 run = 0
 # Runtime
-optimize()
-print("Ticket get",ticket)
+
+shop_buyAll()
+
+# Summary
+print("Ticket get :",ticket)
 """ Main Menu
 If active, y = 700
 home R = 255, x = 180
