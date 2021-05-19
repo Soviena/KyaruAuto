@@ -3,7 +3,7 @@
 
 Still in development
 ## Features
-- Auto dungeon
+- Auto dungeon (Hard)
 - Auto optimize chara
 - Auto Grotto
 - Buy all in bonus shop
@@ -12,6 +12,12 @@ Still in development
 ## Roadmap
 - Auto daily mission (in development)
 - Set Up party
+- Better text recognition
+- A GUI
+- Installer
+- Refactoring
+- Auto Quest
+- Auto Event
 
 ## Installation
 KyaruAuto requires Python 3+, and teserract
