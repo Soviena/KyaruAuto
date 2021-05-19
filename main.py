@@ -6,6 +6,7 @@ import numpy as np
 from PIL import Image
 import os
 import pytesseract
+import re
 from os import walk
 
 # Equipment list
@@ -492,7 +493,7 @@ def findItems(msc=True,item=None,equipments=True):
         if buy_bonus:
             tap(780,500)
             shop_buyAll()
-            return
+            return True
         else:
             return
     if msc:
@@ -517,18 +518,34 @@ def findItems(msc=True,item=None,equipments=True):
                     if item is not None:
                         if imageRecognition(item, cv2.cvtColor(tmplt,cv2.COLOR_BGR2GRAY), 0.2, "bool",True):
                             print("Item Found!")
+    pattern = r'[0-9]'
     for i in found:
-        if i in equipment_get:
-            j = equipment_get.index(i)
-            name = equipment_get[j]
-            if isnumeric(name[0:2]):
-                n = int(name[0:2])
-                n += 1
-            elif isnumeric(name[0:1]):
-                n = int(name[0:1])
-                n += 1
-        else:
-            equipment_get.append("1x "+ i)
+        for j in equipment_get:
+            if isnumeric(j[0:1]):
+                if isnumeric(name[0:2]):
+                    n = int(name[0:2])
+                elif isnumeric(name[0:1]):
+                    n = int(name[0:1])                
+                new_j = re.sub(pattern,'',j)
+                new_j = new_j.replace('x', '',1)
+                if i == new_j:
+                    n += 1
+                    equipment_get.append('{}x '+i)
+
+            else:
+                equipment_get.append("1x " + i)
+                    
+ 
+        # for j in equipment_get:
+        #     new_j = re.sub(pattern,'',j)
+        #     new_j = new_j.replace('x ', '',1)
+        # if i == new_j :
+        #     x = equipment_get.index(j)
+        #     name = equipment_get[x]
+
+        #     n += 1
+        # else:
+        #     equipment_get.append("1x "+ i)
     tap(1110,655)
     return True
         
@@ -589,8 +606,8 @@ def daily():
     tap(560,700)
     time.sleep(1)
     # tap grotto
-    # tap(985,185)
-    # grotto()
+    tap(985,185)
+    grotto()
     time.sleep(1)
     tap(1170,180)
     dungeon(dg=1)
