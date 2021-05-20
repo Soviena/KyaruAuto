@@ -167,6 +167,11 @@ def saveSnap(image):
     cv2.imwrite(filename, image)
     print('Saved.')
 # function
+def img_loc(template):
+    image = screencap()
+    y,x = imageRecognition(image, template, 0.8, 'loc')
+    return x,y
+
 def findCenter(startX,endX,startY,endY):
     # Return x,y
     midh = endX - startX
@@ -286,6 +291,70 @@ def shop_buyAll(bonus=True):
     tap(50, 50)
     print('Done Buy All')
 
+def normal_gacha():
+    img = screencap()
+    while not imageRecognition(img, cv2.imread(r'Assets/ui/gacha_normal.png',0), 0.9, 'bool'):
+        time.sleep(1)
+        img = screencap()
+    tap(1155, 100)
+    time.sleep(1)
+    img = screencap()
+    if not imageRecognition(img, cv2.imread(r'Assets/ui/gacha_normal_btn.png',0), 0.9, 'bool'):
+        print('not available')
+        return
+    tap(1000,500)
+    time.sleep(1)
+    img = screencap()
+    y,x = imageRecognition(img,  cv2.imread(r'Assets/ui/ok.png',0), 0.8, 'loc')
+    tap(x, y)
+    time.sleep(1)
+    img = screencap()
+    while not imageRecognition(img,  cv2.imread(r'Assets/ui/ok_gray.png',0), 0.8, 'bool'):
+        time.sleep(1)
+        img = screencap()
+    y,x = imageRecognition(img,  cv2.imread(r'Assets/ui/ok_gray.png',0), 0.8, 'loc')
+    tap(x,y)
+    time.sleep(1)
+    return
+
+def Guildhouse_collect():
+    img = screencap()
+    while not imageRecognition(img, cv2.imread(r'Assets/ui/gh_claim.png',0), 0.8, 'bool'):
+        time.sleep(1)
+        img = screencap()
+    tap(1200,570)
+    while not imageRecognition(img, cv2.imread(r'Assets/ui/gh_claim_all.png',0), 0.8, 'bool'):
+        tap(1200,570)
+        img = screencap()
+        if imageRecognition(img, cv2.imread(r'Assets/ui/gh_noitem.png',0), 0.8, 'bool'):
+            print('Already claimed')
+            return
+    tap(640,640)
+    return
+
+def clan_like():
+    img = screencap()
+    while not imageRecognition(img, cv2.imread(r'Assets/ui/clan.png',0), 0.8, 'bool'):
+        time.sleep(1)
+        img=screencap()
+    time.sleep(1)
+    tap(320, 465)
+    img = screencap()
+    while not imageRecognition(img, cv2.imread(r'Assets/ui/clan_like.png',0), 0.8, 'bool'):
+        time.sleep(1)
+        img = screencap()
+    x,y = img_loc(cv2.imread(r'Assets/ui/clan_like.png',0))
+    tap(x, y)
+    img = screencap()
+    while not imageRecognition(img, cv2.imread(r'Assets/ui/clan_like_done.png',0), 0.8, 'bool'):
+        tap(x, y)
+        img = screencap()
+        if imageRecognition(img, cv2.imread(r'Assets/ui/clan_like_cant.png',0), 0.8, 'bool'):
+            print('already liked for the day')
+            return
+    tap(640, 500)
+    return
+
 # automation
 def stage_menu(enter='dg',item=None):
     global stamina_refresh, stamina_refresh_max, recharge_stamina
@@ -317,25 +386,66 @@ def stage_menu(enter='dg',item=None):
                 print("No stamina")
                 return False
         if assemble_party():
-            return findItems(item=need)
+            return findItems(item=need,equipments=True)
         else:
             return False
         #y, x = imageRecognition(img, cv2.cvtColor(need, cv2.COLOR_BGR2GRAY), 0.4, 'loc')
     elif enter == 'grotto':
         img = screencap()
-        while not imageRecognition(img, cv2.imread(r'Assets/ui/start.png',0), 0.8, 'bool'):
-            time.sleep(1)
+        while not imageRecognition(img, cv2.imread(r'Assets/ui/start.png',0), 0.93, 'bool'):
+            tap(1120, 600)
             img = screencap()
+            if imageRecognition(img, cv2.imread(r'Assets/ui/attempt_limit.png',0), 0.8, 'bool'):
+                tap(900, 600)
+                time.sleep(1)
+                tap(44, 40)
+                print('Attempt limit')
+                return
         tap(1120, 600) 
         assemble_party()
-        time.sleep(1)
+        while not imageRecognition(img, cv2.imread(r'Assets/ui/retry.png',0), 0.958, 'bool',True):
+            tap(880,650)
+            img = screencap()
+            if imageRecognition(img, cv2.imread(r'Assets/ui/grotto_limit.png',0), 0.8, 'bool',True):
+                tap(1100,650)
+                return
         tap(888, 655)
         time.sleep(1)
         tap(795,490)
         battle()
         tap(1110, 670)
 
-def assemble_party():
+def barena():
+    img = screencap()
+    while not imageRecognition(img, cv2.imread(r'Assets/ui/barena.png',0), 0.8, 'bool'):
+        time.sleep(1)
+        img = screencap()
+        if imageRecognition(img, cv2.imread(r'Assets/ui/def_res.png',0), 0.8, 'bool'):
+            tap(50, 175)
+        elif imageRecognition(img, cv2.imread(r'Assets/ui/ranking_reward.png',0), 0.8, 'bool'):
+            tap(50, 175)
+    time.sleep(1)
+    tap(391, 454)
+    img = screencap()
+    while not imageRecognition(img, cv2.imread(r'Assets/ui/arena_rewards.png',0), 0.8, 'bool'):
+        tap(391, 454)
+        img = screencap()
+        if imageRecognition(img, cv2.imread(r'Assets/ui/no_reward.png',0), 0.8, 'bool'):
+            print('no coin yet')
+            break
+    tap(140,160)
+    time.sleep(1)
+    tap(800,230)
+    time.sleep(1)
+    img = screencap()
+    if imageRecognition(img, cv2.imread(r'Assets/ui/ok.png',0), 0.8, 'bool'):
+        tap(140,160)
+        print('Cooldown')
+        return
+    assemble_party(arena="battle")
+    barena()
+
+def assemble_party(arena=""):
     print('Assembling party...')
     while ocr(screencap()[35:75,508:758], 'thresh')[0:14] != 'Assemble Party':
         time.sleep(1)
@@ -354,7 +464,7 @@ def win_stage(image):
     tplt_win = cv2.imread(r'Assets/ui/win.png',0)
     tplt_fail = cv2.imread(r'Assets/ui/failed.png',0)
     win = imageRecognition(image, tplt_win, 0.1, 'bool')
-    failed = imageRecognition(image, tplt_fail, 0.7, 'bool')
+    failed = imageRecognition(image, tplt_fail, 0.7, 'bool',True)
     if failed:
         return False
     elif win:
@@ -362,7 +472,7 @@ def win_stage(image):
     else:
         return None
 
-def battle():
+def battle(arena=""):
     i = 0
     print('[IN BATTLE]')
     while True:
@@ -390,7 +500,6 @@ def battle():
         print('[END OF BATTLE]')
         tap(1110, 670)
         break
-    print('WIN')
     return True
     
 def grotto():
@@ -414,7 +523,8 @@ def grotto():
         time.sleep(1)
         stage_menu(enter='grotto')
         print('done')
-    x += 280
+        x += 280
+        time.sleep(1)
     time.sleep(1)
     tap(50,50)
     return
@@ -481,7 +591,7 @@ def dungeon(dg=0,enter=False):
                 img = screencap()
             run(folder)
           
-def findItems(msc=True,item=None,equipments=True):
+def findItems(msc=True,item=None,equipments=False):
     print('evaluating drop...')
     global equipment_get
     found = []
@@ -509,7 +619,7 @@ def findItems(msc=True,item=None,equipments=True):
         global eq
         img = screencap()
         for k in eq:
-            print('[{}/{}]Analyzing..'.format(k,len(eq)-1))
+            print('[{}%]Analyzing..'.format(k+1/(len(eq))))
             for v in eq[k]:
                 tmplt = cv2.imread(r'Assets/equipment/Tier{}/{}.png'.format(k,v))
                 if imageRecognition(img, tmplt, 0.97, 'bool',color=True):
@@ -518,24 +628,23 @@ def findItems(msc=True,item=None,equipments=True):
                     if item is not None:
                         if imageRecognition(item, cv2.cvtColor(tmplt,cv2.COLOR_BGR2GRAY), 0.2, "bool",True):
                             print("Item Found!")
-    pattern = r'[0-9]'
-    for i in found:
-        for j in equipment_get:
-            if isnumeric(j[0:1]):
-                if isnumeric(name[0:2]):
-                    n = int(name[0:2])
-                elif isnumeric(name[0:1]):
-                    n = int(name[0:1])                
-                new_j = re.sub(pattern,'',j)
-                new_j = new_j.replace('x', '',1)
-                if i == new_j:
-                    n += 1
-                    equipment_get.append('{}x '+i)
 
-            else:
-                equipment_get.append("1x " + i)
-                    
- 
+    equipment_get.extend(found)
+    # pattern = r'[0-9]'
+    # for i in found:
+    #     for j in equipment_get:
+    #         if isnumeric(j[0:1]):
+    #             if isnumeric(name[0:2]):
+    #                 n = int(name[0:2])
+    #             elif isnumeric(name[0:1]):
+    #                 n = int(name[0:1])                
+    #             new_j = re.sub(pattern,'',j)
+    #             new_j = new_j.replace('x', '',1)
+    #             if i == new_j:
+    #                 n += 1
+    #                 equipment_get.append('{}x '+i)
+    #         else:
+    #             equipment_get.append("1x " + i)
         # for j in equipment_get:
         #     new_j = re.sub(pattern,'',j)
         #     new_j = new_j.replace('x ', '',1)
@@ -585,15 +694,17 @@ def optimize():
         return
 
 def daily():
+    def quest_check():
+        img = screencap()
+        while not imageRecognition(img, cv2.imread(r'Assets/ui/quest.png',0), 0.8, 'bool'):
+            time.sleep(1)
+            img = screencap()
+        return
     #check menu bar
     img = screencap()
     if imageRecognition(img, cv2.imread(r'Assets/ui/menu-bar.png',0), 0.7, 'bool'):
-        if img[700,180,2] == 255:
-            print('IN Home')
-        else:
-            print('Clicking Home')
-            tap(180, 700)
-            time.sleep(1)
+        tap(180, 700)
+
     else :
         print('No menu bar found, please go to home first')
         return
@@ -601,17 +712,35 @@ def daily():
     while not imageRecognition(img, cv2.imread(r'Assets/ui/notices.png',0), 0.8, 'bool'):
         time.sleep(1)
         img = screencap()
-
+    # like clan member
+    tap(920,580)
+    clan_like()
+    # normal gacha
+    tap(940, 700)
+    normal_gacha()
+    # claim guild house
+    tap(760,700)
+    Guildhouse_collect()
     # Goto quest
     tap(560,700)
-    time.sleep(1)
+    quest_check()
     # tap grotto
     tap(985,185)
     grotto()
-    time.sleep(1)
+    quest_check()
+    # tap arena
+    img = screencap()
+    if imageRecognition(img, cv2.imread(r'Assets/ui/b_arena.png',0), 0.8, 'bool'):
+        x,y = img_loc(cv2.imread(r'Assets/ui/b_arena.png',0))
+        tap(x, y)
+        barena()
+        time.sleep(1)
+        tap(560,700)
+    
+    # tap Dungeon
+    quest_check()
     tap(1170,180)
     dungeon(dg=1)
-
 
 # Connect to ADB
 client = AdbClient(host="127.0.0.1", port=5037) #connect adb
@@ -625,14 +754,12 @@ device = devices[0] # sellect first devices
 equipment_get = []
 stamina_refresh = 1
 stamina_refresh_max = 3
-recharge_stamina = True
+recharge_stamina = False
 buy_bonus = True
 ticket = 0
 run = 0
 # Runtime
-
 optimize()
-
 # Summary
 print("Ticket get : ",ticket)
 print("Equipment get : ", equipment_get)
