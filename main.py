@@ -13,8 +13,8 @@ from os import walk
 max_tier = 3
 tierPath = []
 for i in range(max_tier+1):
-    tierPath.append("D:/MEDIA/Code/Python/KyaruAuto/Assets/equipment/Tier"+str(i))
-mc = "D:/MEDIA/Code/Python/KyaruAuto/Assets/equipment/useable"
+    tierPath.append("Assets/equipment/Tier"+str(i))
+mc = "Assets/equipment/useable"
 eq = {}
 items = []
 ij = []
