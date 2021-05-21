@@ -464,7 +464,7 @@ def win_stage(image):
     tplt_win = cv2.imread(r'Assets/ui/win.png',0)
     tplt_fail = cv2.imread(r'Assets/ui/failed.png',0)
     win = imageRecognition(image, tplt_win, 0.1, 'bool')
-    failed = imageRecognition(image, tplt_fail, 0.7, 'bool',True)
+    failed = imageRecognition(image, tplt_fail, 0.7, 'bool')
     if failed:
         return False
     elif win:
@@ -529,7 +529,7 @@ def grotto():
     tap(50,50)
     return
 
-def dungeon(dg=0,enter=False):
+def dungeon(dg=1,enter=False):
     def run(fd):
         img = screencap()
         floor = ocr(img[557:590,275:345], 'thresh')
@@ -566,6 +566,7 @@ def dungeon(dg=0,enter=False):
             else :
                 print('cancelling...')
                 break       
+        print("Dungeon CLEARED")
         return
     if enter:
         if dg == 1:
@@ -718,10 +719,12 @@ def daily():
     # normal gacha
     tap(940, 700)
     normal_gacha()
+    time.sleep(1)
     # claim guild house
     tap(760,700)
     Guildhouse_collect()
     # Goto quest
+    time.sleep(1)
     tap(560,700)
     quest_check()
     # tap grotto
@@ -759,7 +762,7 @@ buy_bonus = True
 ticket = 0
 run = 0
 # Runtime
-optimize()
+dungeon(enter=True)
 # Summary
 print("Ticket get : ",ticket)
 print("Equipment get : ", equipment_get)
