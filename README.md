@@ -8,10 +8,9 @@ Still in development. Tested for Bluestack N-64@1280x720 with Debug bridge
 - Auto optimize chara
 - Auto Grotto
 - Buy all in bonus shop
-
+- Daily mission
 
 ## Roadmap
-- Auto daily mission (in development)
 - Set Up party
 - Better text recognition
 - A GUI
