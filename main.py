@@ -4,10 +4,11 @@ import time
 import cv2
 import numpy as np
 from PIL import Image
-import os
 import pytesseract
 import re
-from os import walk
+import os
+from threading import Thread
+from multiprocessing import Process
 
 # Equipment list
 max_tier = 3
@@ -18,7 +19,7 @@ mc = "Assets/equipment/useable"
 eq = {}
 items = []
 ij = []
-for (dirpath, dirnames, filenames) in walk(mc):
+for (dirpath, dirnames, filenames) in os.walk(mc):
     for j in filenames:
         j = j.replace(".png", "")
         ij.append(j)
@@ -26,7 +27,7 @@ for (dirpath, dirnames, filenames) in walk(mc):
 
 for i in range(max_tier+1):
     ij = []
-    for (dirpath, dirnames, filenames) in walk(tierPath[i]):
+    for (dirpath, dirnames, filenames) in os.walk(tierPath[i]):
         for j in filenames:
             j = j.replace(".png", "")
             ij.append(j)
@@ -330,6 +331,8 @@ def Guildhouse_collect():
             print('Already claimed')
             return
     tap(640,640)
+    print('Claimed')
+    time.sleep(1)
     return
 
 def clan_like():
@@ -353,6 +356,7 @@ def clan_like():
             print('already liked for the day')
             return
     tap(640, 500)
+    print("Liked")
     return
 
 # automation
@@ -404,14 +408,19 @@ def stage_menu(enter='dg',item=None):
         tap(1120, 600) 
         assemble_party()
         while not imageRecognition(img, cv2.imread(r'Assets/ui/retry.png',0), 0.958, 'bool',True):
-            tap(880,650)
+            tap(888, 655)
             img = screencap()
             if imageRecognition(img, cv2.imread(r'Assets/ui/grotto_limit.png',0), 0.8, 'bool',True):
                 tap(1100,650)
                 return
-        tap(888, 655)
-        time.sleep(1)
-        tap(795,490)
+        if imageRecognition(img, cv2.imread(r'Assets/ui/ok.png',0), 0.8, 'bool',True):
+            time.sleep(1)
+            tap(790, 500)
+        else:
+            time.sleep(1)
+            tap(888, 655)
+            time.sleep(1)
+            tap(795,490)
         battle()
         tap(1110, 670)
 
@@ -521,7 +530,7 @@ def grotto():
         else:
             tap(x1, 370)
         time.sleep(1)
-        stage_menu(enter='grotto')
+        stage_menu(enter='grotto') #FIX THIS!
         print('done')
         x += 280
         time.sleep(1)
@@ -694,6 +703,31 @@ def optimize():
         tap(640, 640)
         return
 
+def claim_mission(present=False):
+    def receive_all():
+        tap(1133, 587)
+        time.sleep(2)
+        img = screencap()
+        tap(1133, 587)
+        time.sleep(1)
+        tap(180, 700)
+    if present:
+        receive_all()
+        tap(792, 632)
+        return
+    else:
+        img = screencap()
+        mission = cv2.imread(r'Assets/ui/mission.png',0)
+        y,x = imageRecognition(img, mission, 0.8, 'loc')
+        tap(x, y)
+        img = screencap()
+        while not imageRecognition(img, cv2.imread(r'Assets/ui/mission_back.png',0), 0.7, 'bool'):
+            time.sleep(1)
+            img = screencap()
+        receive_all()
+        return
+
+
 def daily():
     def quest_check():
         img = screencap()
@@ -702,17 +736,19 @@ def daily():
             img = screencap()
         return
     #check menu bar
-    img = screencap()
-    if imageRecognition(img, cv2.imread(r'Assets/ui/menu-bar.png',0), 0.7, 'bool'):
-        tap(180, 700)
-
-    else :
-        print('No menu bar found, please go to home first')
-        return
-    img = screencap()
-    while not imageRecognition(img, cv2.imread(r'Assets/ui/notices.png',0), 0.8, 'bool'):
-        time.sleep(1)
+    def goto_home():
         img = screencap()
+        if imageRecognition(img, cv2.imread(r'Assets/ui/menu-bar.png',0), 0.7, 'bool'):
+            tap(180, 700)
+        else :
+            print('No menu bar found, please go to home first')
+            return
+        img = screencap()
+        while not imageRecognition(img, cv2.imread(r'Assets/ui/notices.png',0), 0.8, 'bool'):
+            time.sleep(1)
+            img = screencap()
+        return
+    goto_home()
     # like clan member
     tap(920,580)
     clan_like()
@@ -739,12 +775,15 @@ def daily():
         barena()
         time.sleep(1)
         tap(560,700)
-    
     # tap Dungeon
     quest_check()
     tap(1170,180)
     dungeon(dg=1)
-
+    goto_home()
+    tap(1115, 580)
+    claim_mission()
+    tap(1212, 580)
+    claim_mission(present=True)
 # Connect to ADB
 client = AdbClient(host="127.0.0.1", port=5037) #connect adb
 devices = client.devices() 
@@ -762,7 +801,7 @@ buy_bonus = True
 ticket = 0
 run = 0
 # Runtime
-dungeon(enter=True)
+optimize()
 # Summary
 print("Ticket get : ",ticket)
 print("Equipment get : ", equipment_get)
