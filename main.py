@@ -413,11 +413,10 @@ def stage_menu(enter='dg',item=None):
             if imageRecognition(img, cv2.imread(r'Assets/ui/grotto_limit.png',0), 0.8, 'bool',True):
                 tap(1100,650)
                 return
+        time.sleep(1)
         if imageRecognition(img, cv2.imread(r'Assets/ui/ok.png',0), 0.8, 'bool',True):
-            time.sleep(1)
             tap(790, 500)
         else:
-            time.sleep(1)
             tap(888, 655)
             time.sleep(1)
             tap(795,490)
@@ -727,7 +726,6 @@ def claim_mission(present=False):
         receive_all()
         return
 
-
 def daily():
     def quest_check():
         img = screencap()
@@ -801,8 +799,7 @@ buy_bonus = True
 ticket = 0
 run = 0
 # Runtime
-optimize()
-# Summary
+shop_buyAll()# Summary
 print("Ticket get : ",ticket)
 print("Equipment get : ", equipment_get)
 """ Main Menu
