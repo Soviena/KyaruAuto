@@ -762,8 +762,8 @@ def daily():
     tap(560,700)
     quest_check()
     # tap grotto
-    tap(985,185)
-    grotto()
+    #tap(985,185)
+    #grotto()
     quest_check()
     # tap arena
     img = screencap()
@@ -799,7 +799,8 @@ buy_bonus = True
 ticket = 0
 run = 0
 # Runtime
-shop_buyAll()# Summary
+daily()
+# Summary
 print("Ticket get : ",ticket)
 print("Equipment get : ", equipment_get)
 """ Main Menu
