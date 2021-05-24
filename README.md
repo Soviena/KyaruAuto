@@ -6,9 +6,11 @@ Still in development. Tested for Bluestack N-64@1280x720 with Debug bridge
 ## Features
 - Auto dungeon (Hard)
 - Auto optimize chara
-- Auto Grotto
 - Buy all in bonus shop
-- Daily mission
+
+££ BUGS
+- stuck in grotto
+- daily() sometimes stuck in menu
 
 ## Roadmap
 - Set Up party
