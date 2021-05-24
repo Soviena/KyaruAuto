@@ -8,7 +8,7 @@ Still in development. Tested for Bluestack N-64@1280x720 with Debug bridge
 - Auto optimize chara
 - Buy all in bonus shop
 
-££ BUGS
+## BUGS
 - stuck in grotto
 - daily() sometimes stuck in menu
 
