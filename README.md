@@ -1,3 +1,4 @@
+# THIS PROJECT IS NO LONGER MAINTAINED
 # KyaruAuto
 ## _Princess Connect Re:Dive automation bot_
 
